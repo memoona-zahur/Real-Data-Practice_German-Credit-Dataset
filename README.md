@@ -1,6 +1,6 @@
 # Real Data Practice — German Credit Dataset (Week 06 Bonus · Ungraded)
 
-Applying this week's full pipeline — **baseline first → logistic → tree → forest → defend a winner → error analysis → calibration** — to the real Statlog **German Credit** benchmark (credit-g): 1,000 loan applicants, 20 features, 700 `good` / 300 `bad` credit risk.
+Applying this week's full pipeline — **baseline first → logistic → tree → forest → defend a winner → error analysis → calibration → statistics on the gaps** — to the real Statlog **German Credit** benchmark (credit-g): 1,000 loan applicants, 20 features, 700 `good` / 300 `bad` credit risk.
 
 Self-paced bonus work. Holds the same bar as the graded week: every claimed number re-verified, every decision written with its *why* (and its *why-not-the-alternative*).
 
@@ -16,28 +16,47 @@ Self-paced bonus work. Holds the same bar as the graded week: every claimed numb
 
 **Shipped model: Random forest** — wins ROC-AUC (0.800), F1 (0.562), precision (0.750) and accuracy (0.790); its only loss is recall (0.450 vs the unconstrained tree's 0.500), a trade the unconstrained tree pays for with full training memorization (train acc 1.000 → test 0.660).
 
+**Statistical honesty you won't find in a basic run (all bootstrap 95% CI, seed 42):**
+- `AUC(forest) − AUC(logistic)` = +0.040, CI **[−0.013, +0.093] — includes 0** → the two top models are *statistically indistinguishable* on 200 test rows; we ship the forest on point estimates and say so plainly (notebook §11).
+- Gender default-rate gap = +7.5 pts (female 35.2% vs male 27.7%), CI **[+0.015, +0.136] — excludes 0** → the fairness concern that motivated exclusion is statistically measurable (notebook §4).
+- Error pattern: only the loan-size gap is conclusive, CI [+0.002, +0.574]; age/duration leans include 0 → reported as directional, not fact (notebook §12).
+
 ## Deliverables
 
 | File | What it is |
 |---|---|
 | `german_credit_practice.ipynb` | The full notebook — 16 sections, Restart-and-Run-All clean |
-| `test_german_credit.py` | 36 adversarial checks (data integrity → fairness canary → every headline number → charts → notebook integrity) |
-| `REFLECTION.md` | Honest real-vs-synthetic reflection + what I'd do differently |
-| `charts/` | 3 PNG figures (class balance, model comparison, calibration curve) |
-| `data/credit_g.csv` + `.sha256` | Pinned raw data (fingerprint `38b6dbf6…`) |
-| `requirements.txt` | Pinned environment (pandas 2.3.3, scikit-learn 1.7.2, …) |
+| `test_german_credit.py` | **55 adversarial checks** (data integrity → fairness canary → every headline number re-computed → bootstrap CIs → parameter claims → charts reopen+overlap → notebook integrity) |
+| `SELF_REVIEW.md` | Requirement-by-requirement review vs the task spec + severity-classified findings |
+| `technical_summary.md` | Non-technical summary (a reader who never opens the notebook understands the whole story) |
+| `REFLECTION.md` | Honest real-vs-synthetic reflection + what surprised me + whether instincts held |
+| `charts/` | 3 PNG figures (class balance, model comparison, calibration curve), each `layout="constrained"` and reopened/verified |
+| `data/credit_g.csv` + `.sha256` | Pinned raw data (fingerprint `38b6dbf6…`, captured the byte-identity of the OpenML fetch) |
+| `requirements.txt` | Pinned environment (pandas 2.3.3, scikit-learn 1.7.2, scipy 1.15.3, …) |
 
-## How to reproduce
+## How to reproduce + fresh-run proof
 
 ```bash
 pip install -r requirements.txt
 jupyter nbconvert --to notebook --execute --inplace german_credit_practice.ipynb
-pytest test_german_credit.py -q     # 36 passed
+pytest test_german_credit.py -q
 ```
+
+Verified after the final rebuild (this is the recorded evidence, not a "trust me" line):
+
+```text
+$ jupyter nbconvert --to notebook --execute --inplace german_credit_practice.ipynb   # ran twice
+[NbConvertApp] Writing 228911 bytes to german_credit_practice.ipynb                  # exit 0, 0 errors
+$ pytest test_german_credit.py -q
+.......................................................     [100%]
+55 passed in 23.43s
+```
+
+Determinism: two consecutive cold executions produced identical metrics (`random_state=42` everywhere); the suite's independent recomputation agrees with every notebook number, including the prose.
 
 ## Two decisions worth knowing about
 
-- **Fairness:** `personal_status` bakes gender into marital status (310/310 rows: `female` ≡ `div/dep/mar`). It is **excluded** from the models and a canary test asserts no gender/`personal_status` column ever reaches the model (§4).
-- **Winner by numbers, not reputation:** forest was chosen on ROC-AUC + F1 even though it "loses" recall to the unconstrained tree — because the tree's recall comes with train-test collapse (honest §11 defense).
+- **Fairness:** `personal_status` bakes gender into marital status (310/310 rows: `female` ≡ `div/dep/mar`), and the female default-rate gap is statistically significant. It is **excluded** from the models — and a canary test asserts no gender/`personal_status` column ever reaches the model (§4).
+- **Winner by numbers, not reputation:** forest was chosen on ROC-AUC + F1 even though it "loses" recall to the unconstrained tree — because the tree's recall comes with train-test collapse; and the forest-vs-logistic edge is honestly reported as not-statistically-conclusive (honest §11 defense).
 
 Run date: 2026-09-08. Env: pandas 2.3.3, numpy 2.2.6, matplotlib 3.10.9, scikit-learn 1.7.2, scipy 1.15.3.
