@@ -39,7 +39,7 @@ The biggest surprise was the tree. On synthetic data I "knew" the answer; here t
 
 ## 4. What stuck
 
-- Markdown never self-verifies → 55-check suite (`test_german_credit.py`) re-computes every headline number from the pinned CSV (fingerprint `38b6dbf6…`).
+- Markdown never self-verifies → 76-check suite (`test_german_credit.py`) re-computes every headline number from the pinned CSV (fingerprint `38b6dbf6…`).
 - Every claimed discovery (Sections 8–13) now cites its actual number, so the notebook cannot quietly drift from reality.
 - The ungraded run held to the same bar as the graded week — because the habit, not the grade, is the thing being trained.
 
