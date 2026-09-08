@@ -26,11 +26,11 @@ Self-paced bonus work. Holds the same bar as the graded week: every claimed numb
 | File | What it is |
 |---|---|
 | `german_credit_practice.ipynb` | The full notebook — 16 sections, Restart-and-Run-All clean |
-| `test_german_credit.py` | **55 adversarial checks** (data integrity → fairness canary → every headline number re-computed → bootstrap CIs → parameter claims → charts reopen+overlap → notebook integrity) |
+| `test_german_credit.py` | **75 adversarial checks** (data integrity → encoding/level integrity → determinism → fairness canary → every headline number + coefficient/importance/calibration/purpose prose re-computed → bootstrap CIs → parameter claims → charts reopen+overlap → notebook integrity) |
 | `SELF_REVIEW.md` | Requirement-by-requirement review vs the task spec + severity-classified findings |
 | `technical_summary.md` | Non-technical summary (a reader who never opens the notebook understands the whole story) |
 | `REFLECTION.md` | Honest real-vs-synthetic reflection + what surprised me + whether instincts held |
-| `charts/` | 3 PNG figures (class balance, model comparison, calibration curve), each `layout="constrained"` and reopened/verified |
+| `charts/` | **8 PNG figures** (class balance, logistic coefficients, forest importances, overfit train-vs-test gap, model comparison, ROC curves, confusion matrix, calibration curve), each `layout="constrained"` and reopened/verified |
 | `data/credit_g.csv` + `.sha256` | Pinned raw data (fingerprint `38b6dbf6…`, captured the byte-identity of the OpenML fetch) |
 | `requirements.txt` | Pinned environment (pandas 2.3.3, scikit-learn 1.7.2, scipy 1.15.3, …) |
 
@@ -46,10 +46,10 @@ Verified after the final rebuild (this is the recorded evidence, not a "trust me
 
 ```text
 $ jupyter nbconvert --to notebook --execute --inplace german_credit_practice.ipynb   # ran twice
-[NbConvertApp] Writing 228911 bytes to german_credit_practice.ipynb                  # exit 0, 0 errors
+[NbConvertApp] Writing 510185 bytes to german_credit_practice.ipynb                  # exit 0, 0 errors
 $ pytest test_german_credit.py -q
-.......................................................     [100%]
-55 passed in 23.43s
+...........................................................................  [100%]
+75 passed in 32.59s
 ```
 
 Determinism: two consecutive cold executions produced identical metrics (`random_state=42` everywhere); the suite's independent recomputation agrees with every notebook number, including the prose.

@@ -12,8 +12,8 @@
 
 **Results.** The random forest was "best": 79% accuracy, catches 45% of defaulters, and ranks applicants best (ROC-AUC 0.80). But honesty check: a bootstrap 95% confidence band for the forest-vs-logistic ranking difference is **[−0.013, +0.093]** — it crosses zero, meaning *200 test rows are too few to say for certain which model is better*. We say that out loud rather than claiming a win.
 
-**Why we trust our own numbers.** Plain-text explanations in notebooks are written by hand, so they can drift from reality. To stop that, an automated suite (`test_german_credit.py`) **recomputes every headline number independently from the raw file** — 55 checks — including the claims in the prose itself, the exact settings used (test size 20%, seed 42, 200 trees), and the statistics behind the fairness and error findings.
+**Why we trust our own numbers.** Plain-text explanations in notebooks are written by hand, so they can drift from reality. To stop that, an automated suite (`test_german_credit.py`) **recomputes every headline number independently from the raw file** — 75 checks — including the claims in the prose itself, the exact settings used (test size 20%, seed 42, 200 trees), the statistics behind the fairness and error findings, and even the input-level encodings and chart files.
 
 **What we learned (the point of the ungraded exercise).** Real data is not "dirtier"; it's *messier in judgment*: you must decide to drop a gender-adjacent column, decide which word-categories to merge, and resist overclaiming a model win the sample size can't support. The pipeline skills transferred unchanged; the judgment calls did not.
 
-**Files:** `german_credit_practice.ipynb` (the full report), `test_german_credit.py` (55 verification checks), `REFLECTION.md` (honest lessons), `charts/` (3 figures), `data/credit_g.csv` (pinned raw data with fingerprint).
+**Files:** `german_credit_practice.ipynb` (the full report), `test_german_credit.py` (75 verification checks), `REFLECTION.md` (honest lessons), `charts/` (8 figures), `data/credit_g.csv` (pinned raw data with fingerprint).
