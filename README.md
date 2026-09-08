@@ -17,9 +17,9 @@ Self-paced bonus work. Holds the same bar as the graded week: every claimed numb
 **Shipped model: Random forest** — wins ROC-AUC (0.800), F1 (0.562), precision (0.750) and accuracy (0.790); its only loss is recall (0.450 vs the unconstrained tree's 0.500), a trade the unconstrained tree pays for with full training memorization (train acc 1.000 → test 0.660).
 
 **Statistical honesty you won't find in a basic run (all bootstrap 95% CI, seed 42):**
-- `AUC(forest) − AUC(logistic)` = +0.040, CI **[−0.013, +0.093] — includes 0** → the two top models are *statistically indistinguishable* on 200 test rows; we ship the forest on point estimates and say so plainly (notebook §11).
-- Gender default-rate gap = +7.5 pts (female 35.2% vs male 27.7%), CI **[+0.015, +0.136] — excludes 0** → the fairness concern that motivated exclusion is statistically measurable (notebook §4).
-- Error pattern: only the loan-size gap is conclusive, CI [+0.002, +0.574]; age/duration leans include 0 → reported as directional, not fact (notebook §12).
+- `AUC(forest) − AUC(logistic)` = +0.040, CI **[−0.013, +0.093] — includes 0** → the two top models are *statistically indistinguishable* on 200 test rows; we ship the forest on point estimates and say so plainly (notebook Section 11).
+- Gender default-rate gap = +7.5 pts (female 35.2% vs male 27.7%), CI **[+0.015, +0.136] — excludes 0** → the fairness concern that motivated exclusion is statistically measurable (notebook Section 4).
+- Error pattern: only the loan-size gap is conclusive, CI [+0.002, +0.574]; age/duration leans include 0 → reported as directional, not fact (notebook Section 12).
 
 ## Deliverables
 
@@ -56,7 +56,7 @@ Determinism: two consecutive cold executions produced identical metrics (`random
 
 ## Two decisions worth knowing about
 
-- **Fairness:** `personal_status` bakes gender into marital status (310/310 rows: `female` ≡ `div/dep/mar`), and the female default-rate gap is statistically significant. It is **excluded** from the models — and a canary test asserts no gender/`personal_status` column ever reaches the model (§4).
-- **Winner by numbers, not reputation:** forest was chosen on ROC-AUC + F1 even though it "loses" recall to the unconstrained tree — because the tree's recall comes with train-test collapse; and the forest-vs-logistic edge is honestly reported as not-statistically-conclusive (honest §11 defense).
+- **Fairness:** `personal_status` bakes gender into marital status (310/310 rows: `female` ≡ `div/dep/mar`), and the female default-rate gap is statistically significant. It is **excluded** from the models — and a canary test asserts no gender/`personal_status` column ever reaches the model (Section 4).
+- **Winner by numbers, not reputation:** forest was chosen on ROC-AUC + F1 even though it "loses" recall to the unconstrained tree — because the tree's recall comes with train-test collapse; and the forest-vs-logistic edge is honestly reported as not-statistically-conclusive (honest Section 11 defense).
 
 Run date: 2026-09-08. Env: pandas 2.3.3, numpy 2.2.6, matplotlib 3.10.9, scikit-learn 1.7.2, scipy 1.15.3.

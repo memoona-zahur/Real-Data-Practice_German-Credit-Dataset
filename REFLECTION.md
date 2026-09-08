@@ -20,7 +20,7 @@ The biggest surprise was the tree. On synthetic data I "knew" the answer; here t
 
 ## 2. The real-data differences worth remembering
 
-1. **The fairness problem is not presentable.** In the synthetic week, "split it into is-married women etc." seemed principled. On real data, `personal_status` has **310/310** overlap between "female" and "div/dep/mar" — there is no marital-status feature separable from gender. The only honest option was **exclusion**, with a documented fairness section (§4) and a *canary test* in the suite asserting no gender/personal_status column reaches the models. I will check for *every* protected column the same way from now on.
+1. **The fairness problem is not presentable.** In the synthetic week, "split it into is-married women etc." seemed principled. On real data, `personal_status` has **310/310** overlap between "female" and "div/dep/mar" — there is no marital-status feature separable from gender. The only honest option was **exclusion**, with a documented fairness section (Section 4) and a *canary test* in the suite asserting no gender/personal_status column reaches the models. I will check for *every* protected column the same way from now on.
 
 2. **Pruning cost me the minority.** The depth-3 tree was "safer" (test acc 0.680 vs 0.660) but its bad-recall collapsed to **0.017** — 1 of 60 defaulters caught. A constraint that improved accuracy destroyed the decision-relevant metric, and only visible because recall was reported, not just accuracy. Lesson reinforced: on imbalanced data, evaluate the minority, always.
 
@@ -29,7 +29,7 @@ The biggest surprise was the tree. On synthetic data I "knew" the answer; here t
 
 5. **Small test sets make metrics noisy.** 200 test rows → ROC-AUC of 0.759 vs 0.800 is a one-split comparison; the calibration curve, at five bins, holds ~20 points/bin in the middle. I state this as a limitation rather than over-claiming (and the suite pins tolerances rather than pretending precision).
 
-6. **The "why not X" habit pays off.** Every engineering call (§5) documented its alternative (ordinal-vs-one-hot, log-vs-scaler, exclude-vs-flag). It made the run reviewable the way the synthetic week never needed to be.
+6. **The "why not X" habit pays off.** Every engineering call (Section 5) documented its alternative (ordinal-vs-one-hot, log-vs-scaler, exclude-vs-flag). It made the run reviewable the way the synthetic week never needed to be.
 
 ## 3. What I would do differently next time
 
@@ -40,7 +40,7 @@ The biggest surprise was the tree. On synthetic data I "knew" the answer; here t
 ## 4. What stuck
 
 - Markdown never self-verifies → 55-check suite (`test_german_credit.py`) re-computes every headline number from the pinned CSV (fingerprint `38b6dbf6…`).
-- Every claimed discovery (§8–§13) now cites its actual number, so the notebook cannot quietly drift from reality.
+- Every claimed discovery (Sections 8–13) now cites its actual number, so the notebook cannot quietly drift from reality.
 - The ungraded run held to the same bar as the graded week — because the habit, not the grade, is the thing being trained.
 
 **Verdict:** real data made *calibration*, *fairness*, and *error patterns* concrete in a way synthetic data couldn't. The pipeline details transferred nearly unchanged; the judgment calls did not.
