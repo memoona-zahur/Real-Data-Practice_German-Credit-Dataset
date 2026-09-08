@@ -42,8 +42,9 @@ from sklearn.calibration import calibration_curve
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (accuracy_score, f1_score, precision_score,
-                             recall_score, roc_auc_score)
+from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
+                             precision_score, recall_score, roc_auc_score,
+                             roc_curve)
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
@@ -51,11 +52,22 @@ ROOT = Path(__file__).parent
 CSV = ROOT / "data" / "credit_g.csv"
 SHA = ROOT / "data" / "credit_g.sha256"
 NB = ROOT / "german_credit_practice.ipynb"
-CHARTS = [ROOT / "charts" / n for n in ("chart_class_balance.png",
-                                        "chart_classification_comparison.png",
-                                        "chart_calibration_curve.png")]
+CHARTS = sorted((ROOT / "charts").glob("*.png"))
 EXPECTED_SHA = "38b6dbf6fb4b0311a3ffc005730f42623128591fb36473ab3c22d270c0467632"
 SMALL = {"retraining", "other", "domestic appliance", "repairs"}
+ORDER_MAPS = {
+    "checking_status": {"no checking": 0, "<0": 1, "0<=X<200": 2, ">=200": 3},
+    "credit_history": {"no credits/all paid": 0, "all paid": 1,
+                       "existing paid": 2, "delayed previously": 3,
+                       "critical/other existing credit": 4},
+    "savings_status": {"no known savings": 0, "<100": 1, "100<=X<500": 2,
+                       "500<=X<1000": 3, ">=1000": 4},
+    "employment": {"unemployed": 0, "<1": 1, "1<=X<4": 2, "4<=X<7": 3, ">=7": 4},
+    "property_magnitude": {"no known property": 0, "car": 1, "life insurance": 2,
+                           "real estate": 3},
+    "job": {"unemp/unskilled non res": 0, "unskilled resident": 1,
+            "skilled": 2, "high qualif/self emp/mgmt": 3},
+}
 SEED = 42
 
 
@@ -72,21 +84,8 @@ def eng(df):
     purpose = df["purpose"].astype(str)
     purpose_grouped = purpose.where(~purpose.isin(SMALL), "other_small")
 
-    order_maps = {
-        "checking_status": {"no checking": 0, "<0": 1, "0<=X<200": 2, ">=200": 3},
-        "credit_history": {"no credits/all paid": 0, "all paid": 1,
-                           "existing paid": 2, "delayed previously": 3,
-                           "critical/other existing credit": 4},
-        "savings_status": {"no known savings": 0, "<100": 1, "100<=X<500": 2,
-                           "500<=X<1000": 3, ">=1000": 4},
-        "employment": {"unemployed": 0, "<1": 1, "1<=X<4": 2, "4<=X<7": 3, ">=7": 4},
-        "property_magnitude": {"no known property": 0, "car": 1, "life insurance": 2,
-                               "real estate": 3},
-        "job": {"unemp/unskilled non res": 0, "unskilled resident": 1,
-                "skilled": 2, "high qualif/self emp/mgmt": 3},
-    }
     X = pd.DataFrame(index=df.index)
-    for col, mapping in order_maps.items():
+    for col, mapping in ORDER_MAPS.items():
         X[col] = df[col].astype(str).map(mapping)
     for col in ["other_parties", "other_payment_plans", "housing",
                 "own_telephone", "foreign_worker"]:
@@ -420,6 +419,28 @@ class TestCharts:
         plt.close(fig)
         assert not collisions, f"overlapping value-labels in comparison chart: {collisions}"
 
+    def test_roc_legend_has_no_overlapping_labels(self, fitted):
+        """Second busiest chart (5 curves + legend): legend text must not collide."""
+        probs = {"baseline": fitted["p_dummy"], "logistic": fitted["p_log"],
+                 "tree_depth3": fitted["p_t3"], "tree_unconstrained": fitted["p_tf"],
+                 "random_forest": fitted["p_rf"]}
+        fig, ax = plt.subplots(figsize=(7, 5.5), layout="constrained")
+        for m, p in probs.items():
+            fpr, tpr, _ = roc_curve(fitted["y_test"], p)
+            ax.plot(fpr, tpr, label=f"{m} — AUC {roc_auc_score(fitted['y_test'], p):.2f}")
+        ax.plot([0, 1], [0, 1], ls=":", color="gray", lw=1)
+        ax.legend(loc="lower right", fontsize=8)
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        legend_fig = ax.get_legend()
+        boxes = [t.get_window_extent(renderer=renderer) for t in legend_fig.get_texts()]
+        collisions = [(legend_fig.get_texts()[i].get_text(),
+                       legend_fig.get_texts()[j].get_text())
+                      for i in range(len(boxes)) for j in range(i + 1, len(boxes))
+                      if boxes[i].overlaps(boxes[j])]
+        plt.close(fig)
+        assert not collisions, f"overlapping legend lines in ROC chart: {collisions}"
+
 
 # ------------------------------------------------------------------ Part J
 class TestMarkdownNumberIntegrity:
@@ -451,9 +472,50 @@ class TestMarkdownNumberIntegrity:
         add("tree3 f1", f"{results['tree_depth3']['f1']:.3f}")              # 0.030
         add("leaves", str(fitted["tf"].get_n_leaves()))                     # 148
         add("misclassified", f"{int(((fitted['p_rf'] >= 0.5).astype(int) != y_te.values).sum())} of 200")  # 42 of 200
+        add("depth18", f"depth {fitted['tf'].get_depth()}")                        # depth 18
+        add("leaves prose", f"{fitted['tf'].get_n_leaves()} leaves")               # 148 leaves
+        add("splits", f"train {fitted['y_train'].mean():.2f}, test {y_te.mean():.2f}")  # train 0.30, test 0.30
 
         missing = [k for k, v in exp.items() if v not in md]
         assert not missing, f"markdown drifted from recomputed values: {missing}"
+
+    def test_coefficient_claims_match(self, fitted):
+        md = _norm(_md_text())
+        coefs = pd.Series(fitted["log"].coef_[0], index=fitted["X_test"].columns)
+        for feature, col in [("purpose_education", "purpose_education"),
+                             ("foreign_worker_yes", "foreign_worker_yes"),
+                             ("purpose_used car", "purpose_used car")]:
+            v = coefs[col]
+            assert f"`{feature}` ({v:+.2f})" in md, \
+                f"prose coefficient for {feature} != recomputed {v:+.2f}"
+
+    def test_importance_claims_match(self, fitted):
+        md = _norm(_md_text())
+        imp = pd.Series(fitted["rf"].feature_importances_,
+                        index=fitted["X_test"].columns).sort_values(ascending=False)
+        for feature in ("credit_amount_log", "checking_status", "age", "duration"):
+            assert f"`{feature}` ({imp[feature]:.3f})" in md, \
+                f"prose importance for {feature} != recomputed {imp[feature]:.3f}"
+
+    def test_purpose_counts_and_skew_in_prose(self, df):
+        md = _norm(_md_text())
+        purpose = df["purpose"].astype(str)
+        counts = purpose.value_counts()
+        for level in SMALL:
+            assert f"`{level}` ({counts[level]})" in md, \
+                f"prose purpose count for {level} != recomputed {counts[level]}"
+        assert f"skew = {stats.skew(df['credit_amount']):.2f}" in md
+
+    def test_calibration_bin_claims_match(self, fitted):
+        md = _norm(_md_text())
+        prob_true, prob_pred = calibration_curve(
+            fitted["y_test"], fitted["p_rf"], n_bins=5, strategy="uniform")
+        pp, pt = [f"{p:.2f}" for p in prob_pred], [f"{t:.2f}" for t in prob_true]
+        assert f"predicted {pp[0]}" in md, f"calibration predicted {pp[0]} missing"
+        assert f"actual {pt[0]}" in md
+        assert f"{pp[1]} predicted" in md and f"actual {pt[1]}" in md   # 0.30 -> 0.20
+        assert f"{pp[2]}" in md and f"actual {pt[2]}" in md             # 0.49 -> 0.55
+        assert f"{pp[4]}" in md and f"actual {pt[4]}" in md             # 0.83 -> 1.00
 
     def test_gender_rates_and_ci_claims_match(self, df, fitted):
         is_female = (df["personal_status"].astype(str).str.split().str[0] == "female").values
@@ -567,3 +629,96 @@ class TestParameterClaims:
     def test_personal_status_documented_exclusion_in_prose(self):
         md = _norm(_md_text())
         assert "EXCLUDE" in md and "personal_status" in md
+
+
+# ------------------------------------------------------------------ Part N
+class TestEncodingIntegrity:
+    def test_every_ordinal_level_is_mapped(self, df):
+        """A .map() miss would silently leak NaN — every raw level must map."""
+        for col, mapping in ORDER_MAPS.items():
+            mapped = df[col].astype(str).map(mapping)
+            assert mapped.notna().all(), f"unmapped level silently NaNs in {col}"
+
+    def test_ordinal_level_sets_match_exactly(self, df):
+        """The documented encodings must match the data exactly: no leftover
+        level, no invented one."""
+        for col, mapping in ORDER_MAPS.items():
+            assert set(df[col].astype(str).unique()) == set(mapping), \
+                f"{col}: data levels != documented mapping levels"
+
+    def test_target_is_last_column(self, df):
+        assert df.shape[1] == 21
+        assert df.columns[-1] == "class"
+
+    def test_target_has_exactly_two_values(self, df):
+        assert set(df["class"].unique()) == {"good", "bad"}
+
+    def test_index_is_uniform_arange(self, df):
+        assert (df.index == pd.RangeIndex(len(df))).all()
+
+    def test_expected_onehot_columns_exist(self, eng):
+        for feature in ("foreign_worker_yes", "purpose_used car",
+                        "housing_rent", "other_payment_plans_none",
+                        "purpose_other_small"):
+            assert feature in eng.columns, f"missing engineered feature: {feature}"
+
+
+# ------------------------------------------------------------------ Part O
+class TestDeterminism:
+    """Reproducibility: identical code path must reproduce identical numbers."""
+
+    def test_forest_two_fits_identical(self, fitted):
+        rf2 = RandomForestClassifier(n_estimators=200, random_state=SEED)
+        rf2.fit(fitted["X_train"], fitted["y_train"])
+        np.testing.assert_array_equal(rf2.predict_proba(fitted["X_test"]),
+                                      fitted["rf"].predict_proba(fitted["X_test"]))
+
+    def test_logistic_two_fits_identical(self, fitted):
+        log2 = LogisticRegression(max_iter=1000, random_state=SEED)
+        log2.fit(fitted["X_train"], fitted["y_train"])
+        np.testing.assert_array_equal(log2.predict_proba(fitted["X_test"]),
+                                      fitted["log"].predict_proba(fitted["X_test"]))
+
+    def test_split_two_calls_identical(self, eng, df):
+        y = (df["class"] == "bad").astype(int)
+        a = train_test_split(eng, y, test_size=0.2, random_state=SEED, stratify=y)
+        b = train_test_split(eng, y, test_size=0.2, random_state=SEED, stratify=y)
+        for xa, xb in zip(a, b):
+            np.testing.assert_array_equal(xa, xb)
+
+
+# ------------------------------------------------------------------ Part P
+class TestMetricSemantics:
+    def test_baseline_confusion_is_all_good(self, fitted):
+        pred = (fitted["p_dummy"] >= 0.5).astype(int)
+        tn, fp, fn, tp = confusion_matrix(fitted["y_test"], pred).ravel()
+        assert (tn, fp, fn, tp) == (140, 0, 60, 0)
+
+    def test_forest_confusion_cells_exact(self, fitted):
+        pred = (fitted["p_rf"] >= 0.5).astype(int)
+        tn, fp, fn, tp = confusion_matrix(fitted["y_test"], pred).ravel()
+        assert tp == 27 and fn == 33, "forest TP/FN must equal 27/33 (recall=0.45)"
+        assert fp == 9 and tn == 131, "forest FP/TN must equal 9/131 (precision=0.75)"
+
+    def test_confusion_agrees_with_reported_metrics(self, fitted, results):
+        pred = (fitted["p_rf"] >= 0.5).astype(int)
+        tn, fp, fn, tp = confusion_matrix(fitted["y_test"], pred).ravel()
+        rec = tp / (tp + fn); prec = tp / (tp + fp)
+        assert rec == pytest.approx(results["random_forest"]["recall"], abs=1e-9)
+        assert prec == pytest.approx(results["random_forest"]["precision"], abs=1e-9)
+
+    def test_all_metrics_finite_and_in_range(self, results):
+        for name in ("baseline", "logistic", "random_forest",
+                     "tree_depth3", "tree_unconstrained"):
+            for metric in ("accuracy", "precision", "recall", "f1", "roc_auc"):
+                v = results[name][metric]
+                assert np.isfinite(v), f"{name}.{metric} is NaN"
+                assert 0.0 <= v <= 1.0, f"{name}.{metric}={v} outside [0,1]"
+
+    def test_every_real_model_beats_baseline_on_auc(self, results):
+        for name in ("logistic", "random_forest", "tree_depth3", "tree_unconstrained"):
+            assert results[name]["roc_auc"] > results["baseline"]["roc_auc"], name
+
+    def test_both_splits_preserve_bad_rate(self, fitted):
+        assert fitted["y_test"].mean() == pytest.approx(0.30, abs=0.01)
+        assert fitted["y_train"].mean() == pytest.approx(0.30, abs=0.01)
