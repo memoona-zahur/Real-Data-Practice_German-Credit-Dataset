@@ -20,7 +20,8 @@ raw CSV (data/credit_g.csv) rather than trusting notebook state:
   Part H  Error+calibration  — misclassified count, mistake-vs-correct bootstrap CIs
   Part I  Charts             — PNG magic bytes + reopened renders + no text overlap
   Part J  Markdown integrity — every prose number == a live/recomputed value
-  Part K  Raw immutability   — CSV byte-identical to the captured fingerprint
+  Part K  Raw immutability   — CSV byte-identical to the captured fingerprint;
+               environment matches requirements.txt pins (else pins can't hold)
   Part M  Parameter claims   — hyperparameters in prose == actual model objects
   Part N  Encoding integrity — every ordinal level mapped, sets match exactly,
                provenance (21 cols, target last), expected one-hot columns
@@ -604,6 +605,30 @@ class TestRawImmutability:
         pinned = SHA.read_text().split()[0]
         assert pinned == EXPECTED_SHA
         assert hashlib.sha256(CSV.read_bytes()).hexdigest() == pinned
+
+    def test_environment_matches_requirements_pins(self):
+        """Exact prose pins are only guaranteed in the pinned environment. If
+        this fails, the notebook was executed or the suite run outside
+        requirements.txt — the coefficients/metrics can tip at the rounding
+        boundary under a different scikit-learn, which then misleads as
+        'stale prose'. Re-run in the pinned env, don't rewrite the prose."""
+        import matplotlib as mpl
+        from scipy import __version__ as scipy_ver
+        import sklearn
+        actual = {"scikit-learn": sklearn.__version__,
+                  "pandas": pd.__version__, "numpy": np.__version__,
+                  "scipy": scipy_ver, "matplotlib": mpl.__version__}
+        want = {}
+        for line in (ROOT / "requirements.txt").read_text().splitlines():
+            if "==" in line:
+                pkg, ver = line.split("==")
+                want[pkg.strip()] = ver.strip()
+        drift = {k: (v, want[k]) for k, v in actual.items()
+                 if k in want and v != want[k]}
+        assert not drift, (
+            "environment differs from your requirements.txt pins " + repr(drift) +
+            " — install the pinned env (`pip install -r requirements.txt`) and "
+            "re-execute the notebook there. The exact-value prose pins assume it.")
 
 
 # ------------------------------------------------------------------ Part M

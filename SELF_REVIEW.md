@@ -2,7 +2,7 @@
 
 *Reviewer mode: I reviewed the deliverable as if a stranger submitted it — evidence-cited, requirements mapped one-by-one, findings severity-classified, then fixed in priority order. Author-vs-reviewer hat switched after completion.*
 
-**Date:** 2026-09-08 · **Suite result at review time:** `pytest test_german_credit.py -q` → **75 passed** · Two cold `nbconvert --execute` re-runs → **0 error cells** (determinism + fresh-run proof).
+**Date:** 2026-09-08 · **Suite result at review time:** `pytest test_german_credit.py -q` → **76 passed** · Two cold `nbconvert --execute` re-runs → **0 error cells** (determinism + fresh-run proof).
 
 ---
 
@@ -47,7 +47,7 @@
 | Charts: correct type, `layout="constrained"`, saved PNG reopened + overlap-free | ✓ | all 8 `layout="constrained"`; Part I reopens every PNG (magic bytes, header/body dims, non-blank) + re-renders the two busiest charts (metric comparison + ROC legend) and asserts **no text overlaps** |
 | README + technical summary + self-review present | ✓ | README.md, technical_summary.md, this file |
 | Git: feature branch, incremental commits, PR (now single `main`) | ✓ | `feature/real-data-practice-review` → PR #1 opened & merged (rebase), branch deleted; **6 incremental commits** on `main`, all pushed |
-| Adversarial + self-created checks run, all passing | ✓ | 75 passed |
+| Adversarial + self-created checks run, all passing | ✓ | 76 passed |
 | Clean git tree before submit | ✓ | working tree clean after `git commit` |
 
 ---
@@ -96,4 +96,4 @@ No P0 (blocks-submission) findings — no wrong numbers, no error cells, no miss
 
 ## 6. Reviewer's note (summary verdict)
 
-What's genuinely good: the whole artifact runs cold with zero errors, every prose number is now anchored to an independent recomputation (75 checks including the prose itself, plus coefficient/importance/calibration and encoding-level integrity), the fairness call is evidence-first (entanglement proof + a significant gap) rather than policy-talk, and the two statistical surprises — the forest edge is *not* significant at n=200, and only the loan-size error pattern is conclusive — are reported honestly instead of spun. Top fixes applied in priority order: bootstrap CIs on every comparison gap, full markdown-number verification, live skew, chart-QA reopen+overlap proof, and a proper feature-branch/PR git flow. As a stranger reading top-to-bottom, the story is complete: question → method → numbers → interpretation → limitation, at every step.
+What's genuinely good: the whole artifact runs cold with zero errors, every prose number is now anchored to an independent recomputation (76 checks including the prose itself, plus coefficient/importance/calibration and encoding-level integrity), the fairness call is evidence-first (entanglement proof + a significant gap) rather than policy-talk, and the two statistical surprises — the forest edge is *not* significant at n=200, and only the loan-size error pattern is conclusive — are reported honestly instead of spun. Top fixes applied in priority order: bootstrap CIs on every comparison gap, full markdown-number verification, live skew, chart-QA reopen+overlap proof, and a proper feature-branch/PR git flow. As a stranger reading top-to-bottom, the story is complete: question → method → numbers → interpretation → limitation, at every step.

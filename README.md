@@ -26,7 +26,7 @@ Self-paced bonus work. Holds the same bar as the graded week: every claimed numb
 | File | What it is |
 |---|---|
 | `german_credit_practice.ipynb` | The full notebook — 16 sections, Restart-and-Run-All clean |
-| `test_german_credit.py` | **75 adversarial checks** (data integrity → encoding/level integrity → determinism → fairness canary → every headline number + coefficient/importance/calibration/purpose prose re-computed → bootstrap CIs → parameter claims → charts reopen+overlap → notebook integrity) |
+| `test_german_credit.py` | **76 adversarial checks** (data integrity → encoding/level integrity → determinism → fairness canary → every headline number + coefficient/importance/calibration/purpose prose re-computed → bootstrap CIs → parameter claims → charts reopen+overlap → notebook integrity) |
 | `SELF_REVIEW.md` | Requirement-by-requirement review vs the task spec + severity-classified findings |
 | `technical_summary.md` | Non-technical summary (a reader who never opens the notebook understands the whole story) |
 | `REFLECTION.md` | Honest real-vs-synthetic reflection + what surprised me + whether instincts held |
@@ -39,7 +39,8 @@ Self-paced bonus work. Holds the same bar as the graded week: every claimed numb
 ```bash
 pip install -r requirements.txt
 jupyter nbconvert --to notebook --execute --inplace german_credit_practice.ipynb
-pytest test_german_credit.py -q
+pytest test_german_credit.py -q        # compact dot output
+pytest test_german_credit.py -v -rA    # per-test name + PASSED status + final report
 ```
 
 Verified after the final rebuild (this is the recorded evidence, not a "trust me" line):
@@ -49,10 +50,12 @@ $ jupyter nbconvert --to notebook --execute --inplace german_credit_practice.ipy
 [NbConvertApp] Writing 510185 bytes to german_credit_practice.ipynb                  # exit 0, 0 errors
 $ pytest test_german_credit.py -q
 ...........................................................................  [100%]
-75 passed in 32.59s
+76 passed in 33.26s
 ```
 
 Determinism: two consecutive cold executions produced identical metrics (`random_state=42` everywhere); the suite's independent recomputation agrees with every notebook number, including the prose.
+
+**Environment contract:** the exact-value prose pins (e.g. coefficient `+0.82`) assume the pinned versions in `requirements.txt` (`scikit-learn==1.7.2`, …). Under a *different* scikit-learn, logistic can converge to coefficients a rounding-boundary away and the exact pins legitimately fail — so install the pinned env, don't rewrite the prose. The suite checks this for you (Part K).
 
 ## Two decisions worth knowing about
 
