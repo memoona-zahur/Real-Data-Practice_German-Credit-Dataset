@@ -22,6 +22,12 @@ raw CSV (data/credit_g.csv) rather than trusting notebook state:
   Part J  Markdown integrity — every prose number == a live/recomputed value
   Part K  Raw immutability   — CSV byte-identical to the captured fingerprint
   Part M  Parameter claims   — hyperparameters in prose == actual model objects
+  Part N  Encoding integrity — every ordinal level mapped, sets match exactly,
+               provenance (21 cols, target last), expected one-hot columns
+  Part O  Determinism        — two identical forest/logistic fits and two split
+               calls reproduce byte-identical outputs
+  Part P  Metric semantics   — confusion matrices match reported metrics, all
+               metrics finite in [0,1], both splits preserve the 30% bad-rate
 
 Run:  pytest test_german_credit.py -q
 """

@@ -46,7 +46,7 @@
 | Honest limitations with impact | ✓ | notebook Section 15 (7 bullets incl. quantified CI finding); REFLECTION.md |
 | Charts: correct type, `layout="constrained"`, saved PNG reopened + overlap-free | ✓ | all 8 `layout="constrained"`; Part I reopens every PNG (magic bytes, header/body dims, non-blank) + re-renders the two busiest charts (metric comparison + ROC legend) and asserts **no text overlaps** |
 | README + technical summary + self-review present | ✓ | README.md, technical_summary.md, this file |
-| Git: feature branch, incremental commits, PR open | ✓ | `feature/real-data-practice-review` ← 3 incremental commits; PR #1 open |
+| Git: feature branch, incremental commits, PR (now single `main`) | ✓ | `feature/real-data-practice-review` → PR #1 opened & merged (rebase), branch deleted; **6 incremental commits** on `main`, all pushed |
 | Adversarial + self-created checks run, all passing | ✓ | 75 passed |
 | Clean git tree before submit | ✓ | working tree clean after `git commit` |
 
@@ -64,7 +64,7 @@
 
 **P2 — chart QA checked only magic bytes (fixed).** Part I now reopens each saved PNG (magic, header-vs-body dims, non-blank render) and re-renders the busiest chart to assert zero overlapping text labels.
 
-**P2 — git done as one commit on main (fixed).** Moved to `feature/real-data-practice-review`, three incremental commits (notebook rigor → suite → docs), PR #1 opened with description + verification section.
+**P2 — git done as one commit on main (fixed).** Moved to `feature/real-data-practice-review`; committed incrementally (notebook rigor → suite → docs → charts → §5 prose → symbol-cleanup), PR #1 opened with description + verification section, then **merged (rebase) and the branch deleted** → final state is a single incremental `main`.
 
 **P1 — honest limitation added (fixed).** Section 15 now quantifies the "single split" limitation with the actual CI ([−0.013, +0.093] contains 0) instead of a generic sentence.
 
